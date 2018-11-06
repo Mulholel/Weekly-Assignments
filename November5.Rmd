@@ -1,0 +1,139 @@
+---
+title: "R Assignment, November 5th"
+author: "Emma Mulholland"
+date: "November 4, 2018"
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Question 2**
+Import RNA-seq file: 
+```{r}
+library(readr)
+rna_counts<-read_csv("eXpress_dm_counts.csv")
+```
+
+Creation of mean expression function. I changed any 0 values to NA and then removed the NA values from the mean calculation. This means that the mean expression values will be slightly higher (fewer observations for sum to be divided by), but it makes the log transformations possible. I included the `na.rm = TRUE` condition even for the non-log transformed option to be consistent across each option. 
+```{r}
+mean_express<-function(x, y, l2 = FALSE){
+  x[x == 0]<- NA
+  if(l2 == TRUE){
+    mean(log2(x[[y]]), na.rm = TRUE)
+  } else {
+    mean(x[[y]], na.rm = TRUE)
+  }
+}
+```
+Sample use of function on columns from `rna_counts`: 
+```{r}
+mean_express(rna_counts, 6)
+mean_express(rna_counts, 6, l2 = TRUE)
+mean_express(rna_counts, 12)
+mean_express(rna_counts, 12, l2 = TRUE)
+mean_express(rna_counts, 9)
+mean_express(rna_counts, 9, l2 = TRUE)
+```
+
+**Question 3** 
+Function for calculating the mean of each column and then placing it into a vector with the associated column names:
+```{r}
+mean_express_v<-function(x, l2 = FALSE){
+  x[x == 0]<- NA
+  vect_mean_express<-numeric()
+  if(l2 == TRUE){
+    for(i in 2:length(x)){
+     z<-mean(log2(x[[i]]), na.rm = TRUE)
+     vect_mean_express<-append(vect_mean_express, z)
+    } 
+    } else {
+        for(i in 2:length(x)){
+        z<-mean(x[[i]], na.rm = TRUE)
+        vect_mean_express<-append(vect_mean_express, z)
+        }
+    }
+  names(vect_mean_express)<-colnames(x[2:length(x)])
+  return(vect_mean_express)
+}
+```
+Test with `rna_counts`
+```{r}
+mean_express_v(rna_counts)
+mean_express_v(rna_counts, l2 = TRUE)
+```
+Comparing the outcomes for column 6, 9, 12 shows the same results as those seen in Q2 (in vector from mean_express_v, columns 6,9,12 correspond to elements 5, 8, and 11 because the first column is ignored).
+Using the `sort` function, it appears that several of the highest mean expression values are seen in tissue samples from either thorax or head horns. It also appears that the individuals F197, M180, M257, M200 all have high mean expression values in multiple samples. 
+
+**Question 4**
+I wrote the following function to accomplish the same task using the apply family of functions ( the "_vapp" in the function name is for "vapply"): 
+```{r}
+mean_express_vapp<- function(x, l2 = FALSE){
+  if(l2 == TRUE){
+  mean_ex_vect<-vapply(x, function(x) {mean(x, na.rm = TRUE)}, FUN.VALUE = 1)
+  return(log2(mean_ex_vect))
+   } else {
+  mean_ex_vect<-vapply(x, function(x) {mean(x, na.rm = TRUE)}, FUN.VALUE = 1)
+  return(mean_ex_vect)
+  }
+}
+```
+Comparing the speed of each function using `system.time`
+```{r}
+system.time(mean_express_v(rna_counts))
+system.time(mean_express_vapp(rna_counts))
+```
+The function that uses vapply runs faster (elapsed=0 sec) compared to the function using a for loop. 
+
+**Question 5**
+You could use the `colNames` function to calculate and output all the column means with the appropriate names: 
+```{r}
+colMeans(rna_counts[2:56], na.rm = TRUE)
+#for log2 values: 
+log2(colMeans(rna_counts[2:56], na.rm = TRUE))
+```
+
+**Question 6**
+You could use the `rowNames` function 
+```{r}
+gene_means<- rowMeans(rna_counts[1:nrow(rna_counts), 2:56])
+names(gene_means)<-rna_counts$X1
+head(gene_means)
+
+#for log2 transformation: 
+gene_means_l2<- log(rowMeans(rna_counts[1:nrow(rna_counts), 2:56]))
+names(gene_means_l2)<-rna_counts$X1
+head(gene_means_l2)
+```
+
+
+**Question 7 **
+Subsetting data into male head horn samples and then lg and sm treatments: 
+```{r}
+library(dplyr)
+male_samples<- rna_counts %>% select(starts_with("M"))
+male_samples_hdhorns<-male_samples %>% select(contains("hdhorn"))
+male_samples_hdhorns_sm<- male_samples_hdhorns %>% select(contains("sm"))  
+male_samples_hdhorns_lg<- male_samples_hdhorns %>% select(contains("lg"))
+```
+
+Calculating mean expression values for each gene in sm and lg treatments, and the mean differences (abs values): 
+```{r}
+rMeans_male_samples_hdhorns<-rowMeans(male_samples_hdhorns, na.rm = TRUE)
+rMeans_male_samples_hdhorns_lg<-rowMeans(male_samples_hdhorns_lg, na.rm = TRUE)
+rMeans_male_samples_hdhorns_sm<-rowMeans(male_samples_hdhorns_sm, na.rm = TRUE)
+mean_diff_lg_sm_hdhords<-abs(rMeans_male_samples_hdhorns_lg - rMeans_male_samples_hdhorns_sm)
+```
+
+
+**Question 8**
+```{r}
+#Plot of male sample hdhorns means against means difference
+plot(rMeans_male_samples_hdhorns, mean_diff_lg_sm_hdhords, type = "p")
+#Plot of log2 transformed male sample hdhorns means and log2 transformed means difference
+plot(log2(rMeans_male_samples_hdhorns), log2(mean_diff_lg_sm_hdhords), type = "p")
+```
+
