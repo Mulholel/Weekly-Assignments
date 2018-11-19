@@ -1,0 +1,136 @@
+---
+title: "Base R Graphics Notes"
+author: "Emma Mulholland"
+date: "November 18, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Into to Base R graphics
+Can do either exploratory or explanatory visualizations of data (i.e. explore relationships, or show others relationships you have found). 
+
+`plot()` function is a major function in base R graphics
+The results of `plot()` rely on the object that it's applied to (e.g applying plot to a factor variable returns a bar graph as opposed to a scatterplot). 
+
+`plot(x, y, xlab = "", ylab = "")` xlab, ylab arguments can be used to set labels for the x and y axes. 
+
+##Techniques for showing relationships between variables 
+`scatterplot(x,y)` Gives you a scatterplot
+`sunflowerplot(x,y)` Gives you a sunflowerplot (like a scatterplot, but repeated x,y points add petals to the 
+flower)
+`boxplot(x,y)` Gives you a boxplot
+`mosaicplot(x,y)` Gives you a mosaix plot
+Can add arguments to the plot functions: `main = ""` adds a title, `log = y` puts the y axis on a log scale (or x if switched)
+`pch = ` argument changes the shape of points, while `col = "red"` changes the colour of the points. 
+`las = 2` will set labels perpendicular to axes; `cex` changes the size of the points. 
+
+`par()` function changes the plot paramaters globally 
+Common par functions are `mfrow` (changes the array layout of the plots)
+
+##Different plot types
+**Histogram:** divides the data into bins- the count of a bin is the number of times that point occurs in the data set.
+**Density plot:** normalized or smoothed histogram 
+**Normal QQ Plot:** sorts the values and then plots then agains an x-axis derived from the Gaussian distribution. *For data that follows a Gaussian distribution, the points should closely follow the line.*
+
+`truehist()` scales counts to give an enstimate of probability density in a histogram. 
+
+
+##Adding details to a plot
+plot parameters can be set locally or globally (i.e. par)
+`pch` defines point shapes locally
+`type = ""` argument can also be used in `plot()` to define plot type locally
+= "n" no plot (useful for adding custom points, axes, etc).
+= "o" overlaid 
+= "l" lines
+= "p" points
+= "s" steps
+
+`points()` can be used to add points to a plot
+`text(x,y,labels, adj, srt,cex, font)` can be used to add text to a plot
+x,y-> where to place the text (*for labelling points, x and y can be the same variables used to make the graph*)
+labels-> the text that will be used for labelling
+srt-> allows angle of orientation of the text to be changed (relative to the x axis)
+cex-> changes text size
+font-> changes font type
+
+##Adding and modifying legends
+Can use the `legend()` function. 
+x argument can be set to things like "topleft" to determine the relative position of the legend on the graph
+
+##Adding custom axes 
+To stop `plot()` from creating default axes, can add the optional argument `axes = FALSE` and then add your own axes using the `axis()` function. 
+`axis(side, at, labels, las)`
+side-> determines what side of plot the axes goes on (from bottom to left, top, right: 1,2,3,4)
+at-> tells the function where to draw the tick marks
+labels-> what labels should say at the tick marks 
+
+##Adding a smooth trend line
+Can use the `supsmu()` function to model a trend line, then use `lines()` to add the line to the plot.
+`trendline1<-supsmu(x,y)`
+`lines(trendline1)`
+
+
+##Managing visual complexity
+`matplot(x,y)` function allows for multiple scatterplots on same axes
+Usually accepts a vector of numerical x values and a matrix of y values
+The number of plots in an array will be equal to the number of columns in the dataframe, squared.
+e.g: matplot(df$x, df[, c("y", "z")], xlab, ylab) 
+xlab and ylab arguments can be used to give labels to axes. 
+
+##Making multiple plot arrays
+Global setting `par()` can be used to change plot array layout (e.g. with mfrow function), but can also use the `layout()` function. 
+`layout` uses a matrix to define the plot array 
+e.g
+```{r}
+rowA<-c(1,1,1)
+rowB<-c(2,0,3)
+layoutVector<-c(rowA,rowA,rowB)
+layoutMatrix<-matrix(layoutVector, byrow = TRUE, nrow = 3)
+```
+Gives a layout matrix of 3X3 grid where top two rows are 1st plot, bottom left corner is 2nd plot, and bottom right corner is 3rd plot. 
+
+##Advanced plot customization
+Some plot functions return useful information in addition to plots. e.g. the `barplot()` function also returns a vector with the values of the center of each plot. This can be useful for overlaying text on a barplot (i.e. can use the returned values in a call to the `text()` function). 
+`symbols()` shows the relationships between 3 or more variables
+e.g. symbols(x,y, squares = , bg = )
+x,y are first variables, can set the shape ("squares, etc") to a third variable and use bg to set colours. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
