@@ -1,0 +1,161 @@
+---
+title: "Bio720 Assignment 4"
+author: "Emma Mulholland"
+date: "December 1, 2018"
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Q2:
+
+```{r}
+diploid_selection <- function(p0, q0, w_AA, w_Aa, w_aa, n = 100) {
+  p<-rep(NA, n)
+  q<-rep(NA, n)
+  w_bar<- rep(NA, n)
+  
+  w_bar[1]<- ((p0^2)*w_AA) + (2*p0*q0*w_Aa) + ((q0^2)*w_aa) #initialize first index values, give value of w_bar at t+1
+  p[1] <- ((p0^2)*(w_AA/w_bar[1])) + (p0*q0*(w_Aa/w_bar[1])) #initialize first index value for frequency of p at (t+1) 
+  q[1] <- (1-p[1]) #initialize first index value for frequency of q at (t+1)
+  for(i in 2:n){#loop for n generations 
+    w_bar[i] <- ((p[i-1]^2)*w_AA) + (2*p[i-1]*q[i-1]*w_Aa) + ((q[i-1]^2)*w_aa)
+    p[i] <- (p[i-1]^2)*(w_AA/w_bar[i]) + (p[i-1]*q[i-1]*(w_Aa/w_bar[i]))
+    q[i] <- 1-p[i]
+  }
+  
+  #Printing a graph: 
+  plot(x = 1:n, y = p, xlab = "Generations", ylab = "Allele frequency (p)")
+  #Fixation message: 
+  if (any(p>0.9999)){
+    fixation <- min(which.max(p>0.9999))
+    cat("Fixation of allele p occurs approximately at generation", fixation)
+  } else {
+    MaxPFreq <- max(p)
+    cat("Fixation does not occur, max frequency of p occurs at generation", MaxPFreq)
+  }
+}
+diploid_selection(0.6, 0.4, 1, 0.9, 0.8, n = 100)
+```
+
+Q3: 
+```{r}
+gd_sim<- function(m, n, x){ #m is number of alleles in a population, n is the number of generations to run sim for, x is starting allele freq for p. 
+  
+  allele_freq <- rep(NA, n) #Set up vectors to store the allele_sample and frequencies for each generation
+  
+  alleles <- sample(c("x", "y"), size = m, replace = TRUE, prob = c(x, 1-x)) #Set the first value of the storage vectors
+  allele_freq[1] <- length(alleles[alleles == "x"])/m #use allele)sample == "x"; count the number of one allele and determine that freq
+  
+  for(i in 2:n){# Loop through n generations; for i sample, use the frequencies of i-1 to calculate probabilities
+    alleles <- sample(c("x", "y"), size = m, replace = TRUE, prob = c(allele_freq[i-1], 1-allele_freq[i-1]))
+    allele_freq[i] <- length(alleles[alleles == "x"])/m
+  }
+    plot(x = 1:n, y = allele_freq, type = "p", xlab = "generations", ylab = "frequency of x")
+}
+gd_sim(40, 100, 0.5)
+```
+
+Q4: 
+```{r}
+#gd_sim2 is the same as gd_sim, but without the plot function at the end
+gd_sim2 <- function(m, n, x){ 
+  allele_freq <- rep(NA, n) 
+  alleles <- sample(c("x", "y"), size = m, replace = TRUE, prob = c(x, 1-x)) 
+  allele_freq[1] <- length(alleles[alleles == "x"])/m 
+  
+  for(i in 2:n){
+    alleles <- sample(c("x", "y"), size = m, replace = TRUE, prob = c(allele_freq[i-1], 1-allele_freq[i-1]))
+    allele_freq[i] <- length(alleles[alleles == "x"])/m
+  }
+  return(allele_freq)
+}
+
+gd_sim_rep <- function(k, m, n, x){#k = times to run simulation, m = number of alleles, n = generation time, x = p starting freq
+ replicates <- replicate(k, gd_sim2(m, n, x))
+ loss <- replicates[n,] == 0
+ return(sum(loss)/k)
+}
+
+gd_sim_rep(1000, 400, 100, 0.5)
+gd_sim_rep(1000, 400, 100, 0.25)
+gd_sim_rep(1000, 400, 100, 0.1)
+
+```
+
+Q5
+```{r}
+gd_sim3_g <- function(m, n, x){ 
+    allele_freq <- rep(NA, n)
+  alleles <- sample(c("x", "y"), size = m, replace = TRUE, prob = c(x, 1-x)) 
+  allele_freq[1] <- length(alleles[alleles == "x"])/m 
+  
+  for(i in 2:n){
+    alleles <- sample(c("x", "y"), size = m, replace = TRUE, prob = c(allele_freq[i-1], 1-allele_freq[i-1]))
+    allele_freq[i] <- length(alleles[alleles == "x"])/m
+  }
+  lines(x = (1:n), y = allele_freq, pch = 20)
+}
+
+gd_sim_rep_g <- function(k, m, n, x){
+  plot(x = (1:n), ylim = (0:1), type = "n", xlab = "generations", ylab = "allele_frequency", main = "The impact of genetic drift on allele frequency")
+  replicates <- replicate(k, gd_sim3_g(m, n, x))
+}
+gd_sim_rep_g(100, 400, 100, 0.5)
+
+
+```
+
+
+Q5
+Part 1:
+```{r}
+power_analysis <- function(a, b, m, stde){
+  x <- seq(from =1, to =10, length.out = m)
+  y_deterministic <- a + b*x
+  y_simulated <- rnorm(length(x), mean = y_deterministic, sd = stde)
+  mod_sim <- lm(y_simulated ~ x)
+  p_val_slope <- summary(mod_sim)$coef[2,4]
+  return(p_val_slope)
+}
+power_analysis(0.5, 0.1, 20, 2)
+```
+You can test that the function works by running the code from the assignment and the above function using the same seed (via `set.seed()` ). If the function works, then the result should be the same as the result from the code in the assignment. 
+
+Part 2: 
+```{r}
+p_values <- replicate(1000, power_analysis(0.5, 0.1, 20, 2))
+hist(p_values)
+sig_p_values <- p_values < 0.05
+sum(sig_p_values)/1000
+```
+
+Part 3: 
+```{r}
+p_values_2 <- replicate(1000, power_analysis(0.5, 0, 20, 2)) 
+hist(p_values_2)
+sig_p_values_2 <- p_values_2 < 0.05
+sum(sig_p_values_2)/1000
+```
+When the slope is equal to 0, a smaller proportion of the p values are significant (i.e. less than 0). This makes sense becasue when the slope is equal to 0, there is no relationship between the two variables (i.e. x can change but y will remain the same). As such, there is no relationship to model, so the number of simulations that result in significant p values will be lower.  
+
+
+Part 4: 
+```{r}
+test <- c(seq(from = 10, to = 100, by = 5))
+p_vals_sig_prop <- rep(NA, 19)
+for(i in 1:length(test)){
+  results100 <- replicate(100, power_analysis(a = 0.5, b = 0.1, m = test[i], stde = 1.5))
+  p_val_sig <- results100 < 0.05
+  p_vals_sig_prop[i] <-sum(p_val_sig)/length(results100)
+}
+p_vals_sig_prop
+plot(x = test, y = p_vals_sig_prop, xlab = "Sample size", ylab = "Proportion of significant p values (p < 0.05)")
+```
+
+As the sample size increases, the proportion of p values less than 0.05 also increases. The larger the sample size, the easier it will be to detect the relationship in the data, thus a higher number of p values less than 0.05. 
+
